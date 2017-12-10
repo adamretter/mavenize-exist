@@ -9,16 +9,6 @@ DEST_DIR="`pwd`/target"
 
 
 ##
-# Creates a standard project layout for a module
-#
-# @param $1 The module name
-##
-function create_std_project_layout {
-	MODULE_DIR="${DEST_DIR}/${1}"
-	mkdir -p "${MODULE_DIR}/src/main/java" "${MODULE_DIR}/src/main/resources" "${MODULE_DIR}/src/test/java" "${MODULE_DIR}/src/test/resources"
-}
-
-##
 # Creates a Module
 #
 # @param $1 The module name
@@ -54,11 +44,11 @@ function copy_pom {
 ##
 function copy_main_java {
 	local MODULE_NAME=$1
-	local SOURCES=$2
+	local MAIN_JAVA_SOURCES=("${!2}")
 	local MODULE_DIR="${DEST_DIR}/${1}"
 
-	local FIND_ARGS=('-name' '*.java')
-	copy_main $MODULE_NAME $SOURCES 'src/main/java' $FIND_ARGS
+	local MAIN_JAVA_FIND_ARGS=('-name' '*.java')
+	copy_main "${MODULE_NAME}" MAIN_JAVA_SOURCES[@] 'src/main/java' MAIN_JAVA_FIND_ARGS[@]
 }
 
 ##
@@ -69,11 +59,11 @@ function copy_main_java {
 ##
 function copy_main_resources {
         local MODULE_NAME=$1
-	 local SOURCES=$2
+	local MAIN_RESOURCES_SOURCES=("${!2}")
         local MODULE_DIR="${DEST_DIR}/${1}"
 
-	local FIND_ARGS=('-not' '-name' '*.java')
-	copy_main $MODULE_NAME $SOURCES 'src/main/resources' $FIND_ARGS
+	local MAIN_RESOURCES_FIND_ARGS=('-not' '-name' '*.java')
+	copy_main "${MODULE_NAME}" MAIN_RESOURCES_SOURCES[@] 'src/main/resources' MAIN_RESOURCES_FIND_ARGS[@]
 }
 
 ##
@@ -86,9 +76,9 @@ function copy_main_resources {
 ##
 function copy_main {
         local MODULE_NAME=$1
-	local SOURCES=$2
+	local SOURCES=("${!2}")
 	local MVN_SRC_DIR=$3
-	local FIND_ARGS=$4
+	local FIND_ARGS=("${!4}")
         local MODULE_DIR="${DEST_DIR}/${1}"
 
 	echo "Copying module files: ${MODULE_NAME}/${MVN_SRC_DIR}..."
@@ -145,17 +135,14 @@ EOL
 ##
 function mavenize_module {
 	local MODULE_NAME=$1
-	local MAIN_JAVA=$2
-	local MAIN_RESOURCES=$3
-	local TEST_JAVA=$4
-	local TEST_RESOURCES=$5
+	local MODULE_PACKAGES=("${!2}")
 
 	echo "Mavenizing module: ${MODULE_NAME}..."
 
 	#create_std_project_layout $MODULE_NAME
 	create_module $MODULE_NAME
-	copy_main_java $MODULE_NAME $MAIN_JAVA
-	copy_main_resources $MODULE_NAME $MAIN_RESOURCES
+	copy_main_java $MODULE_NAME MODULE_PACKAGES[@]
+	copy_main_resources $MODULE_NAME MODULE_PACKAGES[@]
 }
 
 ##
@@ -207,11 +194,11 @@ cp -v exist-parent.pom "${DEST_DIR}/exist-parent/pom.xml"
 
 extract_package_names 'start.jar'
 EXIST_START_PKGS=( "${PKGS[@]}" )
-mavenize_module exist-start $EXIST_START_PKGS $EXIST_START_PKGS
+mavenize_module exist-start EXIST_START_PKGS[@]
 
 extract_package_names 'exist.jar'
 EXIST_CORE_PKGS=("${PKGS[@]}")
-mavenize_module exist-core $EXIST_CORE_PKGS $EXIST_CORE_PKGS
+mavenize_module exist-core EXIST_CORE_PKGS[@]
 
 create_mvn_java_git_ignore 
 
