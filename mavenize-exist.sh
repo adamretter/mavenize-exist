@@ -24,10 +24,10 @@ function create_std_project_layout {
 # @param $1 The module name
 ##
 function create_module {
-	MODULE_NAME=$1
+	local MODULE_NAME=$1
 
 	echo "Creating module: $MODULE_NAME..."
-	MODULE_DIR="${DEST_DIR}/${MODULE_NAME}"
+	local MODULE_DIR="${DEST_DIR}/${MODULE_NAME}"
 	mkdir -p "${MODULE_DIR}"
 
 	copy_pom $MODULE_NAME
@@ -39,9 +39,9 @@ function create_module {
 # @param $1 The module name
 ##
 function copy_pom {
-	MODULE_NAME=$1
+	local MODULE_NAME=$1
 
-	MODULE_DIR="${DEST_DIR}/${MODULE_NAME}"
+	local MODULE_DIR="${DEST_DIR}/${MODULE_NAME}"
 	cp "${1}.pom" "${MODULE_DIR}/pom.xml"
 	echo "Created POM ${MODULE_NAME}/pom.xml"
 }
@@ -53,11 +53,11 @@ function copy_pom {
 # @param $2 An array of package names which contain the sources
 ##
 function copy_main_java {
-	MODULE_NAME=$1
-	SOURCES=$2
-	MODULE_DIR="${DEST_DIR}/${1}"
+	local MODULE_NAME=$1
+	local SOURCES=$2
+	local MODULE_DIR="${DEST_DIR}/${1}"
 
-	FIND_ARGS=('-name' '*.java')
+	local FIND_ARGS=('-name' '*.java')
 	copy_main $MODULE_NAME $SOURCES 'src/main/java' $FIND_ARGS
 }
 
@@ -68,11 +68,11 @@ function copy_main_java {
 # @param $2 An array of package names which contain the resources
 ##
 function copy_main_resources {
-        MODULE_NAME=$1
-        SOURCES=$2
-        MODULE_DIR="${DEST_DIR}/${1}"
+        local MODULE_NAME=$1
+	 local SOURCES=$2
+        local MODULE_DIR="${DEST_DIR}/${1}"
 
-	FIND_ARGS=('-not' '-name' '*.java')
+	local FIND_ARGS=('-not' '-name' '*.java')
 	copy_main $MODULE_NAME $SOURCES 'src/main/resources' $FIND_ARGS
 }
 
@@ -85,22 +85,22 @@ function copy_main_resources {
 # @param $4 An array of arguments to the find command to locate specific file types.
 ##
 function copy_main {
-        MODULE_NAME=$1
-        SOURCES=$2
-	MVN_SRC_DIR=$3
-	FIND_ARGS=$4
-        MODULE_DIR="${DEST_DIR}/${1}"
+        local MODULE_NAME=$1
+	local SOURCES=$2
+	local MVN_SRC_DIR=$3
+	local FIND_ARGS=$4
+        local MODULE_DIR="${DEST_DIR}/${1}"
 
 	echo "Copying module files: ${MODULE_NAME}/${MVN_SRC_DIR}..."
 
         for src in "${SOURCES[@]}"
         do  
-                d="${SRC_DIR}/src/${src}"
-                FILES=(`find $d -maxdepth 1 -type f "${FIND_ARGS[@]}"`)
+                local d="${SRC_DIR}/src/${src}"
+                local FILES=(`find $d -maxdepth 1 -type f "${FIND_ARGS[@]}"`)
                 for file in "${FILES[@]}"
                 do  
-                        destfile="${MODULE_DIR}/${MVN_SRC_DIR}${file##$SRC_DIR/src}"
-                        destdir=$(dirname "${destfile}")
+                        local destfile="${MODULE_DIR}/${MVN_SRC_DIR}${file##$SRC_DIR/src}"
+                        local destdir=$(dirname "${destfile}")
 
                         if [ ! -d "${destdir}" ]
                         then
@@ -116,6 +116,10 @@ function copy_main {
 #
 ##
 function create_mvn_java_git_ignore {
+
+	echo -e ""
+	echo "Creating .gitignore"
+
 	cat > "${DEST_DIR}/.gitignore" <<EOL
 # Maven Output
 target/
@@ -140,11 +144,11 @@ EOL
 # @param $1 The module name
 ##
 function mavenize_module {
-	MODULE_NAME=$1
-	MAIN_JAVA=$2
-	MAIN_RESOURCES=$3
-	TEST_JAVA=$4
-	TEST_RESOURCES=$5
+	local MODULE_NAME=$1
+	local MAIN_JAVA=$2
+	local MAIN_RESOURCES=$3
+	local TEST_JAVA=$4
+	local TEST_RESOURCES=$5
 
 	echo "Mavenizing module: ${MODULE_NAME}..."
 
@@ -162,7 +166,7 @@ function mavenize_module {
 # @out $PKGS will hold an array of unique package names
 ##
 function extract_package_names {
-	JAR_FILENAME=$1
+	local JAR_FILENAME=$1
 
 	echo -e ""
 	echo "Extracting package names from ${JAR_FILENAME}..."
@@ -172,7 +176,7 @@ function extract_package_names {
 	PKGS=()
 	for jarentry in "${JAR_LIST[@]}"
 	do
-        	JAR_ENTRY_FILE=`echo ${jarentry} | cut -d' ' -f8`
+        	local JAR_ENTRY_FILE=`echo ${jarentry} | cut -d' ' -f8`
 
         	# only packages for which we actually have class files
         	if [[ $JAR_ENTRY_FILE == *".class"* ]]
@@ -187,28 +191,29 @@ function extract_package_names {
 }
 
 
-
-
+echo -e ""
 echo "Reading eXist-db from ${SRC_DIR}..."
 echo "Writing Mavenized eXist-db to ${DEST_DIR}..."
+echo -e ""
 
+
+### Copy infrastructure poms
 mkdir -p target
 cp -v exist-maven-modules.pom "${DEST_DIR}/pom.xml"
 mkdir -p "${DEST_DIR}/exist-parent"
 cp -v exist-parent.pom "${DEST_DIR}/exist-parent/pom.xml"
 
-
-
 ###  Mavenize each eXist-db Module
 
 extract_package_names 'start.jar'
-EXIST_START_PKGS=$PKGS
+EXIST_START_PKGS=( "${PKGS[@]}" )
 mavenize_module exist-start $EXIST_START_PKGS $EXIST_START_PKGS
 
 extract_package_names 'exist.jar'
-EXIST_CORE_PKGS=$PKGS
+EXIST_CORE_PKGS=("${PKGS[@]}")
 mavenize_module exist-core $EXIST_CORE_PKGS $EXIST_CORE_PKGS
 
 create_mvn_java_git_ignore 
 
+echo -e ""
 echo "Completed OK :-)"
