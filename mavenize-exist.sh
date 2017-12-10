@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -x	# enable for debugging
 
 SRC_DIR=/Users/aretter/code/exist-for-release
 
@@ -27,23 +28,42 @@ function copy_main_java {
 	SOURCES=$2
 	MODULE_DIR="${DEST_DIR}/${1}"
 
-	for src in "${SOURCES[@]}"
-	do
-		d="${SRC_DIR}/src/${src}"
-		# find $d -name *.java -exec cp --verbose --parents {} $MODULE_DIR \;
-		FILES=(`find $d -name \*.java`)
-		for file in "${FILES[@]}"
-		do
-			destfile="${MODULE_DIR}/src/main/java${file##$SRC_DIR/src}"
-			destdir=$(dirname "${destfile}")
+	FIND_ARGS=('-type' 'f' '-name' '*.java')
+	copy_main $MODULE_NAME $SOURCES 'src/main/java' $FIND_ARGS
+}
 
-			if [ ! -d "${destdir}" ]
-			then
-				mkdir -p "${destdir}"
-			fi
-			cp -v "${file}" "${destfile}"
-		done
-	done
+function copy_main_resources {
+        MODULE_NAME=$1
+        SOURCES=$2
+        MODULE_DIR="${DEST_DIR}/${1}"
+
+	FIND_ARGS=('-type' 'f' '-not' '-name' '*.java')
+	copy_main $MODULE_NAME $SOURCES 'src/main/resources' $FIND_ARGS
+}
+
+function copy_main {
+        MODULE_NAME=$1
+        SOURCES=$2
+	MVN_SRC_DIR=$3
+	FIND_ARGS=$4
+        MODULE_DIR="${DEST_DIR}/${1}"
+
+        for src in "${SOURCES[@]}"
+        do  
+                d="${SRC_DIR}/src/${src}"
+                FILES=(`find $d "${FIND_ARGS[@]}"`)
+                for file in "${FILES[@]}"
+                do  
+                        destfile="${MODULE_DIR}/${MVN_SRC_DIR}${file##$SRC_DIR/src}"
+                        destdir=$(dirname "${destfile}")
+
+                        if [ ! -d "${destdir}" ]
+                        then
+                                mkdir -p "${destdir}"
+                        fi  
+                        cp -v "${file}" "${destfile}"
+                done
+        done
 }
 
 ##
@@ -84,6 +104,7 @@ function mavenize_module {
 	create_std_project_layout $MODULE_NAME
 	copy_pom $MODULE_NAME
 	copy_main_java $MODULE_NAME $MAIN_JAVA
+	copy_main_resources $MODULE_NAME $MAIN_RESOURCES
 }
 
 echo "Reading eXist-db from ${SRC_DIR}..."
@@ -94,9 +115,10 @@ cp -v exist-maven-modules.pom "${DEST_DIR}/pom.xml"
 mkdir -p "${DEST_DIR}/exist-parent"
 cp -v exist-parent.pom "${DEST_DIR}/exist-parent/pom.xml"
 
-EXIST_START_MAIN_JAVA=("org/exist/start")
+EXIST_START_MAIN_JAVA=('org/exist/start')
+EXIST_START_MAIN_RESOURCES=('org/exist/start')
 
-mavenize_module exist-start $EXIST_START_MAIN_JAVA
+mavenize_module exist-start $EXIST_START_MAIN_JAVA $EXIST_START_MAIN_RESOURCES
 # mavenize_module exist-core
 
 create_mvn_java_git_ignore 
