@@ -24,7 +24,7 @@
 
     <modules>
         <module>exist-parent</module>
-        <module>exist-start</module>
+        <module>exist-core</module>
     </modules>
 
 </project>

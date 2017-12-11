@@ -48,7 +48,7 @@ function copy_main_java {
 	local MODULE_DIR="${DEST_DIR}/${1}"
 
 	local MAIN_JAVA_FIND_ARGS=('-name' '*.java')
-	copy_main "${MODULE_NAME}" MAIN_JAVA_SOURCES[@] 'src/main/java' MAIN_JAVA_FIND_ARGS[@]
+	copy_mvn "${MODULE_NAME}" "${SRC_DIR}/src" MAIN_JAVA_SOURCES[@] 'src/main/java' MAIN_JAVA_FIND_ARGS[@]
 }
 
 ##
@@ -63,41 +63,76 @@ function copy_main_resources {
         local MODULE_DIR="${DEST_DIR}/${1}"
 
 	local MAIN_RESOURCES_FIND_ARGS=('-not' '-name' '*.java')
-	copy_main "${MODULE_NAME}" MAIN_RESOURCES_SOURCES[@] 'src/main/resources' MAIN_RESOURCES_FIND_ARGS[@]
+	copy_mvn "${MODULE_NAME}" "${SRC_DIR}/src" MAIN_RESOURCES_SOURCES[@] 'src/main/resources' MAIN_RESOURCES_FIND_ARGS[@]
+}
+
+##
+# Copies the src/test/java files for a module
+#
+# @param $1 The module name
+# @param $2 An array of package names which contain the sources
+##
+function copy_test_java {
+        local MODULE_NAME=$1
+        local TEST_JAVA_SOURCES=("${!2}")
+        local MODULE_DIR="${DEST_DIR}/${1}"
+
+        local TEST_JAVA_FIND_ARGS=('-name' '*.java')
+        copy_mvn "${MODULE_NAME}" "${SRC_DIR}/test/src" TEST_JAVA_SOURCES[@] 'src/test/java' TEST_JAVA_FIND_ARGS[@]
+}
+
+##
+# Copies the src/test/resources for a module
+#
+# @param $1 The module name
+# @param $2 An array of package names which contain the resources
+##
+function copy_test_resources {
+        local MODULE_NAME=$1
+        local TEST_RESOURCES_SOURCES=("${!2}")
+        local MODULE_DIR="${DEST_DIR}/${1}"
+
+        local TEST_RESOURCES_FIND_ARGS=('-not' '-name' '*.java')
+        copy_mvn "${MODULE_NAME}" "${SRC_DIR}/test/src" TEST_RESOURCES_SOURCES[@] 'src/main/resources' TEST_RESOURCES_FIND_ARGS[@]
 }
 
 ##
 # Function for copying maven module files
 #
 # @param $1 The module name
-# @param $2 An array of package names which contain the files
-# @param $3 The maven module directory, e.g. 'src/main/java'
-# @param $4 An array of arguments to the find command to locate specific file types.
+# @param $2 the absolute path to the source base
+# @param $3 An array of package names which contain the files
+# @param $4 The maven module directory, e.g. 'src/main/java'
+# @param $5 An array of arguments to the find command to locate specific file types.
 ##
-function copy_main {
+function copy_mvn {
         local MODULE_NAME=$1
-	local SOURCES=("${!2}")
-	local MVN_SRC_DIR=$3
-	local FIND_ARGS=("${!4}")
+	local SOURCE_BASE=$2
+	local SOURCES=("${!3}")
+	local MVN_SRC_DIR=$4
+	local FIND_ARGS=("${!5}")
         local MODULE_DIR="${DEST_DIR}/${1}"
 
 	echo "Copying module files: ${MODULE_NAME}/${MVN_SRC_DIR}..."
 
         for src in "${SOURCES[@]}"
         do  
-                local d="${SRC_DIR}/src/${src}"
-                local FILES=(`find $d -maxdepth 1 -type f "${FIND_ARGS[@]}"`)
-                for file in "${FILES[@]}"
-                do  
-                        local destfile="${MODULE_DIR}/${MVN_SRC_DIR}${file##$SRC_DIR/src}"
-                        local destdir=$(dirname "${destfile}")
+                local SD="${SOURCE_BASE}/${src}"
+		if [ -d "$SD" ]
+		then
+                	local FILES=(`find $SD -maxdepth 1 -type f "${FIND_ARGS[@]}"`)
+                	for file in "${FILES[@]}"
+                	do  
+                        	local DEST_FILE="${MODULE_DIR}/${MVN_SRC_DIR}${file##$SOURCE_BASE}"
+                        	local DEST_DIR=$(dirname "${DEST_FILE}")
 
-                        if [ ! -d "${destdir}" ]
-                        then
-                                mkdir -p "${destdir}"
-                        fi  
-                        cp -v "${file}" "${destfile}"
-                done
+                        	if [ ! -d "${DEST_DIR}" ]
+                        	then
+                                	mkdir -p "${DEST_DIR}"
+                        	fi  
+                        	cp -v "${file}" "${DEST_FILE}"
+                	done
+		fi
         done
 }
 
@@ -143,6 +178,8 @@ function mavenize_module {
 	create_module $MODULE_NAME
 	copy_main_java $MODULE_NAME MODULE_PACKAGES[@]
 	copy_main_resources $MODULE_NAME MODULE_PACKAGES[@]
+	copy_test_java $MODULE_NAME MODULE_PACKAGES[@]
+	copy_test_resources $MODULE_NAME MODULE_PACKAGES[@]
 }
 
 ##
@@ -192,12 +229,17 @@ cp -v exist-parent.pom "${DEST_DIR}/exist-parent/pom.xml"
 
 ###  Mavenize each eXist-db Module
 
-extract_package_names 'start.jar'
-EXIST_START_PKGS=( "${PKGS[@]}" )
-mavenize_module exist-start EXIST_START_PKGS[@]
+#extract_package_names 'start.jar'
+#EXIST_START_PKGS=( "${PKGS[@]}" )
+#mavenize_module exist-start EXIST_START_PKGS[@]
 
-extract_package_names 'exist.jar'
+## Note there is a cicular dependency between the source files in start.jar, exist.jar and exist-optional.jar, so for now we just put both into exist-core
+extract_package_names 'start.jar'
 EXIST_CORE_PKGS=("${PKGS[@]}")
+extract_package_names 'exist.jar'
+EXIST_CORE_PKGS+=("${PKGS[@]}")
+extract_package_names 'exist-optional.jar'
+EXIST_CORE_PKGS+=("${PKGS[@]}")
 mavenize_module exist-core EXIST_CORE_PKGS[@]
 
 create_mvn_java_git_ignore 
