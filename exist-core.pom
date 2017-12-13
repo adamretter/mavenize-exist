@@ -240,7 +240,7 @@
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjrt</artifactId>
-            <version>1.9.0.RC1</version>
+            <version>1.9.0.RC2</version>
         </dependency>
 
         <dependency>
@@ -286,8 +286,23 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.xmlunit</groupId>
+            <artifactId>xmlunit-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.xmlunit</groupId>
+            <artifactId>xmlunit-legacy</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -311,8 +326,99 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-xml</artifactId>
         </dependency>
+        <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>fluent-hc</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
+
+    <build>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>antlr-maven-plugin</artifactId>
+                <version>2.2</version>
+                <configuration>
+                    <grammars>org/exist/xquery/parser/XQuery.g,org/exist/xquery/parser/XQueryTree.g,org/exist/xquery/parser/DeclScanner.g,org/exist/xquery/xqdoc/parser/XQDocParser.g</grammars>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <excludes>
+                                <!-- compiled by the Aspectj plugin below -->
+                                <exclude>org/exist/security/PermissionRequiredAspect.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>aspectj-maven-plugin</artifactId>
+                <version>1.10</version>
+                <configuration>
+                    <showWeaveInfo>true</showWeaveInfo>
+                    <complianceLevel>${project.build.source}</complianceLevel>
+                    <source>${project.build.source}</source>
+                    <target>${project.build.target}</target>
+                    <sources>
+                        <source>
+                            <basedir>${project.build.sourceDirectory}</basedir>
+                            <includes>
+                                <include>org/exist/security/PermissionRequiredAspect.java</include>
+                            </includes>
+                        </source>
+                    </sources>
+                    <weaveDirectories>
+                        <weaveDirectory>${project.build.directory}/classes</weaveDirectory>
+                    </weaveDirectories>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+
+                        <!-- Compile and weave aspects after all classes compiled by javac -->
+                        <!-- phase>process-classes</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals -->
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+
+    </build>
 
     <repositories>
         <repository>

@@ -13,7 +13,7 @@
     <artifactId>exist</artifactId>
     <packaging>pom</packaging>
 
-    <name>eXist</name>
+    <name>eXist-db</name>
     <description>eXist-db multi-module project</description>
 
     <scm>
