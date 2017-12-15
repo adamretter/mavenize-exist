@@ -90,7 +90,7 @@ function copy_test_resources_pkgs {
         local TEST_RESOURCES_SOURCES=("${!2}")
 
         local TEST_RESOURCES_FIND_ARGS=('-not' '-name' '*.java')
-        copy_mvn_pkgs "${MODULE_NAME}" "${SRC_DIR}/test/src" TEST_RESOURCES_SOURCES[@] 'src/main/resources' TEST_RESOURCES_FIND_ARGS[@]
+        copy_mvn_pkgs "${MODULE_NAME}" "${SRC_DIR}/test/src" TEST_RESOURCES_SOURCES[@] 'src/test/resources' TEST_RESOURCES_FIND_ARGS[@]
 }
 
 ##
@@ -428,16 +428,46 @@ EXIST_CORE_PKGS+=("${PKGS[@]}")
 extract_jar_package_names 'exist-optional.jar'
 EXIST_CORE_PKGS+=("${PKGS[@]}")
 mavenize_module_pkgs 'exist-core' EXIST_CORE_PKGS[@]
-# additional files needed
+# additional test classes needed
 ADDITIONAL_TEST_JAVA_PKGS=(
 	'org/exist/xmldb/concurrent'
 	'org/exist/xmldb/concurrent/action'
 	'org/exist/util/sorters'
 )
 copy_test_java_pkgs 'exist-core' ADDITIONAL_TEST_JAVA_PKGS[@]
+# copy resources needed for running tests
+ADDITIONAL_TEST_RESOURCE_PKGS=(
+	'ant'
+	'org/exist/config'
+	'org/exist/config/mapping'
+	'org/exist/dom/persistent'
+	'org/exist/performance'
+	'org/exist/util'
+	'org/exist/xmldb'
+	'org/exist/xquery'
+	'org/exist/xupdate'
+	'org/exist/xupdate/modifications'
+	'org/exist/xupdate/results'
+	'xquery'
+	'xquery/maps'
+	'xquery/util'
+	'xquery/xinclude'
+	'xquery/xmlcalabash'
+	'xquery/xproc'
+	'xquery/xquery3'
+)
+copy_test_resources_pkgs 'exist-core' ADDITIONAL_TEST_RESOURCE_PKGS[@]
 cp -v "${OUR_DIR}/exist-core.test.conf.xml" "${DEST_DIR}/exist-core/src/test/resources/conf.xml"
+mkdir -p "${DEST_DIR}/exist-core/src/test/resources/tools/jetty"
+cp -v -r "${SRC_DIR}/tools/jetty/etc" "${DEST_DIR}/exist-core/src/test/resources/tools/jetty"
+mkdir -p "${DEST_DIR}/exist-core/src/test/resources/samples"
+cp -v "${SRC_DIR}/samples/biblio.rdf" "${DEST_DIR}/exist-core/src/test/resources/samples"
+cp -v -r "${SRC_DIR}/samples/shakespeare" "${DEST_DIR}/exist-core/src/test/resources/samples"
+cp -v -r "${SRC_DIR}/samples/validation" "${DEST_DIR}/exist-core/src/test/resources/samples"
+cp -v -r "${SRC_DIR}/samples/xinclude" "${DEST_DIR}/exist-core/src/test/resources/samples"
+cp -v -r "${SRC_DIR}/samples/xupdate" "${DEST_DIR}/exist-core/src/test/resources/samples"
+rm "${DEST_DIR}/exist-core/src/test/java/org/exist/xquery/functions/util/CounterTest.java"              # TODO(AR)temp, we need to move this to the counter module
 # Antlr2 parsers should be generated as part of the build
-rm "${DEST_DIR}/exist-core/src/test/java/org/exist/xquery/functions/util/CounterTest.java"		# TODO(AR)temp, we need to move this to the counter module
 mkdir -p "${DEST_DIR}/exist-core/src/main/antlr/org/exist/xquery/parser"
 mv -v ${DEST_DIR}/exist-core/src/main/resources/org/exist/xquery/parser/*.g "${DEST_DIR}/exist-core/src/main/antlr/org/exist/xquery/parser"
 find "${DEST_DIR}/exist-core/src/main/java/org/exist/xquery/parser" -type f -maxdepth 1 -not -name \*AST.java -exec rm {} \;
