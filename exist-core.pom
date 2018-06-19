@@ -306,6 +306,18 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- needed for starting up a jetty server -->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-deploy</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-jmx</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- dependencies from start.jar -->
 
         <!-- dependencies from exist-optional.jar -->
@@ -414,6 +426,17 @@
                         </goals -->
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>org.exist.storage.ConcurrentStoreTest</exclude>
+                        <exclude>org.exist.storage.lock.DeadlockTest</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
 
         </plugins>

@@ -446,6 +446,7 @@ ADDITIONAL_TEST_RESOURCE_PKGS=(
 	'org/exist/xmldb'
 	'org/exist/xquery'
 	'org/exist/xupdate'
+	'org/exist/xupdate/input'
 	'org/exist/xupdate/modifications'
 	'org/exist/xupdate/results'
 	'xquery'
@@ -458,8 +459,20 @@ ADDITIONAL_TEST_RESOURCE_PKGS=(
 )
 copy_test_resources_pkgs 'exist-core' ADDITIONAL_TEST_RESOURCE_PKGS[@]
 cp -v "${OUR_DIR}/exist-core.test.conf.xml" "${DEST_DIR}/exist-core/src/test/resources/conf.xml"
+cp -v "${SRC_DIR}/LICENSE" ${DEST_DIR}/exist-core/src/test/resources/"
+
+# jetty webapp stuff
+# TODO(AR) should be split into a separate Maven module
 mkdir -p "${DEST_DIR}/exist-core/src/test/resources/tools/jetty"
 cp -v -r "${SRC_DIR}/tools/jetty/etc" "${DEST_DIR}/exist-core/src/test/resources/tools/jetty"
+cp -v -r "${SRC_DIR}/tools/jetty/webapps" "${DEST_DIR}/exist-core/src/test/resources/tools/jetty"
+mkdir -v "${DEST_DIR}/exist-core/src/test/resources/webapp"
+find "${SRC_DIR}/webapp" -maxdepth 1 -type f -exec cp -v {} "${DEST_DIR}/exist-core/src/test/resources/webapp"
+cp -v -r "${SRC_DIR}/webapp/resources" "${DEST_DIR}/exist-core/src/test/resources/webapp"
+mkdir -v "${DEST_DIR}/exist-core/src/test/resources/webapp/WEB-INF"
+find "${SRC_DIR}/webapp/WEB-INF" -maxdepth 1 -type f -exec cp -v {} "${DEST_DIR}/exist-core/src/test/resources/webapp/WEB-INF"
+cp -v -r "${SRC_DIR}/webapp/WEB-INF/entities" "${DEST_DIR}/exist-core/src/test/resources/webapp/WEB-INF"
+
 mkdir -p "${DEST_DIR}/exist-core/src/test/resources/samples"
 cp -v "${SRC_DIR}/samples/biblio.rdf" "${DEST_DIR}/exist-core/src/test/resources/samples"
 cp -v -r "${SRC_DIR}/samples/shakespeare" "${DEST_DIR}/exist-core/src/test/resources/samples"
